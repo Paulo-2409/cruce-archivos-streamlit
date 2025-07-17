@@ -1,3 +1,15 @@
+st.markdown(
+    """
+    <div style='text-align: center; padding: 10px 0;'>
+        <h1 style='color:#6C63FF;'>📊 Cruce de Archivos</h1>
+        <h4 style='color:gray;'>Sube, filtra y exporta tus archivos fácilmente</h4>
+        <hr style='border-top: 1px solid #bbb;'>
+        <div style='margin-top:10px; font-weight:bold;'>PMUNIVE 😈</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 import streamlit as st
 import pandas as pd
 import unicodedata
