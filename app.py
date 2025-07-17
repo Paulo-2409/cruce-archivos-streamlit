@@ -1,22 +1,24 @@
 import streamlit as st
+import base64
 import pandas as pd
 import unicodedata
 from io import BytesIO
 
-# Encabezado personalizado
-# st.markdown(
-#     """
-#     <div style='text-align: center; padding: 20px 0;'>
-#         <img src="https://raw.githubusercontent.com/Paulo-2409/cruce-archivos-streamlit/main/logo.jpg" width="100">
-#         <h1 style="font-family: 'Courier New', monospace; color:#BB00FF; font-size: 3em;">
-#             PMUNIVE 😈
-#         </h1>
-#         <h4 style='color:gray;'>Cruce, filtra y exporta archivos con estilo</h4>
-#         <hr style='border-top: 1px solid #bbb; width: 70%; margin: auto;'>
-#     </div>
-#     """,
-#     unsafe_allow_html=True
-# )
+# Mostrar logo centrado arriba
+def mostrar_logo():
+    with open("Logo_Final.png", "rb") as f:
+        logo_bytes = f.read()
+        encoded = base64.b64encode(logo_bytes).decode()
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <img src="data:image/png;base64,{encoded}" alt="PMUNIVE Logo" style="width: 200px; max-width: 100%;">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+mostrar_logo()
 
 # Configuración de página
 st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
