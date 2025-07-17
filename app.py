@@ -4,24 +4,24 @@ import pandas as pd
 import unicodedata
 from io import BytesIO
 
-# Mostrar logo centrado arriba
+# 👇 Mueve esto arriba del todo
+st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
+
+# Mostrar logo centrado con menor margen
 def mostrar_logo():
     with open("Logo_Final.png", "rb") as f:
         logo_bytes = f.read()
         encoded = base64.b64encode(logo_bytes).decode()
         st.markdown(
             f"""
-            <div style="display: flex; justify-content: center; margin-top: 20px;">
-                <img src="data:image/png;base64,{encoded}" alt="PMUNIVE Logo" style="width: 200px; max-width: 100%;">
+            <div style="display: flex; justify-content: center; margin-top: 5px; margin-bottom: 10px;">
+                <img src="data:image/png;base64,{encoded}" alt="PMUNIVE Logo" style="width: 180px; max-width: 100%;">
             </div>
             """,
             unsafe_allow_html=True
         )
 
 mostrar_logo()
-
-# Configuración de página
-st.set_page_config(page_title="🫮 Cruce de Archivos", layout="wide")
 
 # === Título e instrucciones ===
 st.title("🫮 Aplicación para cruzar y filtrar archivos de Excel o CSV")
