@@ -1,3 +1,9 @@
+import streamlit as st
+import pandas as pd
+import unicodedata
+from io import BytesIO
+
+# Encabezado personalizado
 st.markdown(
     """
     <div style='text-align: center; padding: 10px 0;'>
@@ -9,11 +15,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-import streamlit as st
-import pandas as pd
-import unicodedata
-from io import BytesIO
 
 # Configuración de página
 st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
