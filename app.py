@@ -21,15 +21,15 @@ def mostrar_logo():
 mostrar_logo()
 
 # Configuración de página
-st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
+st.set_page_config(page_title="🫮 Cruce de Archivos", layout="wide")
 
 # === Título e instrucciones ===
-st.title("🧮 Aplicación para cruzar y filtrar archivos de Excel o CSV")
+st.title("🫮 Aplicación para cruzar y filtrar archivos de Excel o CSV")
 st.markdown("""
 Bienvenido/a 👋  
 Esta herramienta permite cruzar archivos por una columna común, aplicar filtros, seleccionar columnas y descargar el resultado.
 
-### 🧭 Pasos para usar la app:
+### 🌝 Pasos para usar la app:
 1. **Carga 2 o más archivos .csv o .xlsx**
 2. Selecciona la **columna clave** para cruzar
 3. (Opcional) Aplica filtros por columna
@@ -45,17 +45,18 @@ def normalizar_columna(col):
     return col
 
 # === Cargar archivos ===
-uploaded_files = st.file_uploader("📤 Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
+uploaded_files = st.file_uploader("📄 Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
 
 if uploaded_files and len(uploaded_files) >= 2:
     archivos = []
     for file in uploaded_files:
-        if file.name.endswith('.csv'):
-            df = pd.read_csv(file, sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-        else:
-            df = pd.read_excel(file)
-        df.columns = [normalizar_columna(c) for c in df.columns]
-        archivos.append(df)
+        with st.spinner(f"⏳ Cargando {file.name}..."):
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file, sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
+            else:
+                df = pd.read_excel(file)
+            df.columns = [normalizar_columna(c) for c in df.columns]
+            archivos.append(df)
         st.success(f"✅ {file.name} cargado con {df.shape[0]} filas")
 
     # === Columnas comunes ===
@@ -67,9 +68,10 @@ if uploaded_files and len(uploaded_files) >= 2:
         columna_clave = st.selectbox("🔑 Selecciona la columna clave para cruzar:", sorted(columnas_comunes))
 
         # === Cruce ===
-        resultado = archivos[0]
-        for df in archivos[1:]:
-            resultado = pd.merge(resultado, df, on=columna_clave, how='inner')
+        with st.spinner("🔗 Cruzando archivos..."):
+            resultado = archivos[0]
+            for df in archivos[1:]:
+                resultado = pd.merge(resultado, df, on=columna_clave, how='inner')
         st.info(f"🔗 Cruce completado con {resultado.shape[0]} filas.")
 
         # === Filtros ===
@@ -89,12 +91,13 @@ if uploaded_files and len(uploaded_files) >= 2:
 
         # === Nombre y descarga ===
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-        buffer = BytesIO()
-        resultado.to_excel(buffer, index=False, engine='openpyxl')
-        buffer.seek(0)
+        with st.spinner("📦 Generando archivo Excel..."):
+            buffer = BytesIO()
+            resultado.to_excel(buffer, index=False, engine='openpyxl')
+            buffer.seek(0)
 
         st.download_button(
-            label="📥 Descargar archivo Excel",
+            label="📅 Descargar archivo Excel",
             data=buffer,
             file_name=f"{nombre_salida.strip()}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
