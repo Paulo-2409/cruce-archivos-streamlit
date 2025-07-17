@@ -4,17 +4,14 @@ import pandas as pd
 import unicodedata
 from io import BytesIO
 
-# 👇 Mueve esto arriba del todo
-st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
-
-# Mostrar logo centrado con menor margen
+# Mostrar logo centrado arriba
 def mostrar_logo():
     with open("Logo_Final.png", "rb") as f:
         logo_bytes = f.read()
         encoded = base64.b64encode(logo_bytes).decode()
         st.markdown(
             f"""
-            <div style="display: flex; justify-content: center; margin-top: 5px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: center; margin-top: 5px; margin-bottom: -30px;">
                 <img src="data:image/png;base64,{encoded}" alt="PMUNIVE Logo" style="width: 180px; max-width: 100%;">
             </div>
             """,
@@ -23,13 +20,16 @@ def mostrar_logo():
 
 mostrar_logo()
 
+# Configuración de página
+st.set_page_config(page_title="🧮 Cruce de Archivos", layout="wide")
+
 # === Título e instrucciones ===
-st.title("🫮 Aplicación para cruzar y filtrar archivos de Excel o CSV")
+st.title("🧮 Aplicación para cruzar y filtrar archivos de Excel o CSV")
 st.markdown("""
 Bienvenido/a 👋  
 Esta herramienta permite cruzar archivos por una columna común, aplicar filtros, seleccionar columnas y descargar el resultado.
 
-### 🌝 Pasos para usar la app:
+### 🧭 Pasos para usar la app:
 1. **Carga 2 o más archivos .csv o .xlsx**
 2. Selecciona la **columna clave** para cruzar
 3. (Opcional) Aplica filtros por columna
@@ -45,70 +45,78 @@ def normalizar_columna(col):
     return col
 
 # === Cargar archivos ===
-uploaded_files = st.file_uploader("📄 Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
+uploaded_files = st.file_uploader("📤 Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
 
 if uploaded_files and len(uploaded_files) >= 2:
     archivos = []
     for file in uploaded_files:
+        if file.size > 100 * 1024 * 1024:  # Límite de 100 MB
+            st.error(f"❌ El archivo {file.name} supera el límite de 100 MB.")
+            continue
+
         with st.spinner(f"⏳ Cargando {file.name}..."):
-            if file.name.endswith('.csv'):
-                df = pd.read_csv(file, sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-            else:
-                df = pd.read_excel(file)
-            df.columns = [normalizar_columna(c) for c in df.columns]
-            archivos.append(df)
-        st.success(f"✅ {file.name} cargado con {df.shape[0]} filas")
+            try:
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file, sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
+                else:
+                    df = pd.read_excel(file)
+                df.columns = [normalizar_columna(c) for c in df.columns]
+                archivos.append(df)
+                st.success(f"✅ {file.name} cargado con {df.shape[0]} filas")
+            except Exception as e:
+                st.error(f"❌ Error al cargar {file.name}: {e}")
 
-    # === Columnas comunes ===
-    columnas_comunes = set(archivos[0].columns)
-    for df in archivos[1:]:
-        columnas_comunes &= set(df.columns)
+    if archivos:
+        # === Columnas comunes ===
+        columnas_comunes = set(archivos[0].columns)
+        for df in archivos[1:]:
+            columnas_comunes &= set(df.columns)
 
-    if columnas_comunes:
-        columna_clave = st.selectbox("🔑 Selecciona la columna clave para cruzar:", sorted(columnas_comunes))
+        if columnas_comunes:
+            columna_clave = st.selectbox("🔑 Selecciona la columna clave para cruzar:", sorted(columnas_comunes))
 
-        # === Cruce ===
-        with st.spinner("🔗 Cruzando archivos..."):
-            resultado = archivos[0]
-            for df in archivos[1:]:
-                resultado = pd.merge(resultado, df, on=columna_clave, how='inner')
-        st.info(f"🔗 Cruce completado con {resultado.shape[0]} filas.")
+            # === Cruce ===
+            with st.spinner("🔗 Cruzando archivos..."):
+                resultado = archivos[0]
+                for df in archivos[1:]:
+                    resultado = pd.merge(resultado, df, on=columna_clave, how='inner')
+                st.info(f"🔗 Cruce completado con {resultado.shape[0]} filas.")
 
-        # === Filtros ===
-        st.subheader("🎯 Filtros opcionales")
-        columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
-        for col in columnas_filtro:
-            opciones = resultado[col].dropna().unique().tolist()
-            seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones)
-            if seleccion:
-                resultado = resultado[resultado[col].isin(seleccion)]
-                st.success(f"✅ Filtro aplicado en '{col}'. Filas restantes: {resultado.shape[0]}")
+            # === Filtros ===
+            st.subheader("🎯 Filtros opcionales")
+            columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
+            for col in columnas_filtro:
+                opciones = resultado[col].dropna().unique().tolist()
+                seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones)
+                if seleccion:
+                    resultado = resultado[resultado[col].isin(seleccion)]
+                    st.success(f"✅ Filtro aplicado en '{col}'. Filas restantes: {resultado.shape[0]}")
 
-        # === Selección de columnas ===
-        st.subheader("✂️ Selecciona columnas a exportar")
-        columnas_exportar = st.multiselect("¿Qué columnas deseas incluir en el archivo final?", resultado.columns.tolist(), default=resultado.columns.tolist())
-        resultado = resultado[columnas_exportar]
+            # === Selección de columnas ===
+            st.subheader("✂️ Selecciona columnas a exportar")
+            columnas_exportar = st.multiselect("¿Qué columnas deseas incluir en el archivo final?", resultado.columns.tolist(), default=resultado.columns.tolist())
+            resultado = resultado[columnas_exportar]
 
-        # === Nombre y descarga ===
-        nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-        with st.spinner("📦 Generando archivo Excel..."):
+            # === Nombre y descarga ===
+            nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
             buffer = BytesIO()
-            resultado.to_excel(buffer, index=False, engine='openpyxl')
-            buffer.seek(0)
+            with st.spinner("📦 Generando archivo para descarga..."):
+                resultado.to_excel(buffer, index=False, engine='openpyxl')
+                buffer.seek(0)
 
-        st.download_button(
-            label="📅 Descargar archivo Excel",
-            data=buffer,
-            file_name=f"{nombre_salida.strip()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            st.download_button(
+                label="📥 Descargar archivo Excel",
+                data=buffer,
+                file_name=f"{nombre_salida.strip()}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
-        # === Vista previa ===
-        st.subheader("👀 Vista previa")
-        st.dataframe(resultado.head())
+            # === Vista previa ===
+            st.subheader("👀 Vista previa")
+            st.dataframe(resultado.head())
 
-    else:
-        st.error("❌ No se encontraron columnas comunes entre todos los archivos.")
+        else:
+            st.error("❌ No se encontraron columnas comunes entre todos los archivos.")
 else:
     st.warning("📁 Debes subir al menos 2 archivos para continuar.")
 
