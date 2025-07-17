@@ -6,11 +6,13 @@ from io import BytesIO
 # Encabezado personalizado
 st.markdown(
     """
-    <div style='text-align: center; padding: 10px 0;'>
-        <h1 style='color:#6C63FF;'>📊 Cruce de Archivos</h1>
-        <h4 style='color:gray;'>Sube, filtra y exporta tus archivos fácilmente</h4>
-        <hr style='border-top: 1px solid #bbb;'>
-        <div style='margin-top:10px; font-weight:bold;'>PMUNIVE 😈</div>
+    <div style='text-align: center; padding: 20px 0;'>
+        <img src="https://raw.githubusercontent.com/Paulo-2409/cruce-archivos-streamlit/main/logo.jpg" width="100">
+        <h1 style="font-family: 'Courier New', monospace; color:#BB00FF; font-size: 3em;">
+            PMUNIVE 😈
+        </h1>
+        <h4 style='color:gray;'>Cruce, filtra y exporta archivos con estilo</h4>
+        <hr style='border-top: 1px solid #bbb; width: 70%; margin: auto;'>
     </div>
     """,
     unsafe_allow_html=True
