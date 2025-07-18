@@ -155,9 +155,28 @@ if len(archivos) >= 2:
                 resultado = resultado[resultado[col].isin(seleccion)]
                 st.success(f"✅ Filtro aplicado. Filas restantes: {resultado.shape[0]}")
 
-        st.subheader("✂️ Selecciona columnas a exportar")
-        columnas_exportar = st.multiselect("¿Qué columnas deseas incluir?", resultado.columns.tolist(), default=resultado.columns.tolist())
-        resultado = resultado[columnas_exportar]
+        st.subheader("✂️ Selecciona y ordena columnas a exportar")
+
+        # Paso 1: selección de columnas
+        columnas_default = resultado.columns.tolist()
+        columnas_seleccionadas = st.multiselect(
+            "Selecciona columnas para incluir:",
+            columnas_default,
+            default=columnas_default
+        )
+
+        # Paso 2: orden personalizado
+        orden_columnas = []
+        st.markdown("🔃 Ordena las columnas seleccionadas:")
+        for i in range(len(columnas_seleccionadas)):
+            col = st.selectbox(
+                f"Columna en posición {i+1}:",
+                [c for c in columnas_seleccionadas if c not in orden_columnas],
+                key=f"orden_{i}"
+            )
+            orden_columnas.append(col)
+
+        resultado = resultado[orden_columnas]
 
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
         buffer = BytesIO()
@@ -175,7 +194,7 @@ if len(archivos) >= 2:
         st.dataframe(resultado.head())
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
-
+    
 # === Pie ===
 st.markdown("---")
 st.caption("🔧 Desarrollado por Paulo Munive • App con Streamlit • © 2025")
