@@ -12,7 +12,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 
 # === Logo ===
 def mostrar_logo():
-    with open("Logo_Final.png", "rb") as f:
+    with open("Logo_pmunive.png", "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
         st.markdown(f"""
             <div style='display: flex; justify-content: center; margin-top: 5px; margin-bottom: -30px;'>
