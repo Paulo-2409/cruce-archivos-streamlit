@@ -8,7 +8,7 @@ import gdown
 
 # Mostrar logo centrado arriba
 def mostrar_logo():
-    with open("Logo_Final.png", "rb") as f:
+    with open("Logo_pmunive.png", "rb") as f:
         logo_bytes = f.read()
         encoded = base64.b64encode(logo_bytes).decode()
         st.markdown(
