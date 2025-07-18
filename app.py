@@ -109,6 +109,7 @@ if len(archivos) >= 2:
             try:
                 resultado = archivos[0]
                 col_izq = columnas_clave[0]
+
                 for i in range(1, len(archivos)):
                     col_der = columnas_clave[i]
                     resultado = pd.merge(
@@ -116,8 +117,16 @@ if len(archivos) >= 2:
                         archivos[i],
                         left_on=col_izq,
                         right_on=col_der,
-                        how='inner'
+                        how='inner',
+                        suffixes=('', f'_dup{i}')
                     )
+
+                # Renombrar la columna clave final como "columna_clave" y eliminar duplicados
+                resultado.rename(columns={col_izq: "columna_clave"}, inplace=True)
+                for col in columnas_clave[1:]:
+                    if col in resultado.columns:
+                        resultado.drop(columns=col, inplace=True)
+
                 st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
             except Exception as e:
                 st.error(f"❌ Error al cruzar archivos: {e}")
@@ -127,11 +136,21 @@ if len(archivos) >= 2:
         resultado = None
 
     if resultado is not None:
+        st.subheader("✏️ Renombra las columnas (opcional)")
+        nombres_actuales = resultado.columns.tolist()
+        nuevos_nombres = []
+
+        for nombre in nombres_actuales:
+            nuevo = st.text_input(f"Renombrar '{nombre}' a:", value=nombre, key=f"rename_{nombre}")
+            nuevos_nombres.append(nuevo)
+
+        resultado.columns = nuevos_nombres
+
         st.subheader("🎯 Filtros opcionales")
         columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
         for col in columnas_filtro:
             opciones = resultado[col].dropna().unique().tolist()
-            seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones)
+            seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones, key=f"filtro_{col}")
             if seleccion:
                 resultado = resultado[resultado[col].isin(seleccion)]
                 st.success(f"✅ Filtro aplicado. Filas restantes: {resultado.shape[0]}")
