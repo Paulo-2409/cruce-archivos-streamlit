@@ -77,21 +77,19 @@ if modo_carga in ["Usar URLs", "Ambos"]:
         urls = [u.strip() for u in input_urls.split("\n") if u.strip()]
         for url in urls:
             try:
-                file_id = ""
-                if "/d/" in url:
-                    file_id = url.split("/d/")[1].split("/")[0]
-                elif "id=" in url:
-                    file_id = url.split("id=")[1].split("&")[0]
-                if not file_id:
-                    st.warning(f"⚠️ Formato no válido: {url}")
-                    continue
-                gdrive_url = f"https://drive.google.com/uc?id={file_id}"
-                output_path = os.path.join(TEMP_DIR, f"{file_id}.file")
-                gdown.download(gdrive_url, output_path, quiet=False)
-                df = cargar_archivo(output_path)
-                df.columns = [normalizar_columna(c) for c in df.columns]
-                archivos.append(df)
-                st.success(f"✅ Archivo desde URL cargado con {df.shape[0]} filas")
+    resultado = archivos[0]
+    col_izq = columnas_clave[0]
+    for i in range(1, len(archivos)):
+        col_der = columnas_clave[i]
+        resultado = pd.merge(
+            resultado,
+            archivos[i],
+            left_on=col_izq,
+            right_on=col_der,
+            how='inner'
+        )
+        # Nota: col_izq no se cambia porque seguimos cruzando con la columna original del primer archivo
+    st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
             except Exception as e:
                 st.error(f"❌ No se pudo cargar: {url}\n{e}")
 
@@ -108,12 +106,14 @@ if len(archivos) >= 2:
         with st.spinner("🔗 Cruzando archivos..."):
             try:
                 resultado = archivos[0]
+                col_izq = columnas_clave[0]
                 for i in range(1, len(archivos)):
+                    col_der = columnas_clave[i]
                     resultado = pd.merge(
                         resultado,
                         archivos[i],
-                        left_on=columnas_clave[0],
-                        right_on=columnas_clave[i],
+                        left_on=col_izq,
+                        right_on=col_der,
                         how='inner'
                     )
                 st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
