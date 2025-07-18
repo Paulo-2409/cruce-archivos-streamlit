@@ -2,8 +2,8 @@ import streamlit as st
 import base64
 import pandas as pd
 import unicodedata
-from io import BytesIO
 import requests
+from io import BytesIO
 
 # Mostrar logo centrado arriba
 def mostrar_logo():
@@ -31,7 +31,7 @@ Bienvenido/a 👋
 Esta herramienta permite cruzar archivos por una columna común, aplicar filtros, seleccionar columnas y descargar el resultado.
 
 ### 🧭 Pasos para usar la app:
-1. **Carga 2 o más archivos .csv o .xlsx** o usa URLs públicas directas
+1. **Carga uno o más archivos (.csv o .xlsx) o desde URL**
 2. Selecciona la **columna clave** para cruzar
 3. (Opcional) Aplica filtros por columna
 4. (Opcional) Elige qué columnas exportar
@@ -45,16 +45,15 @@ def normalizar_columna(col):
     col = col.encode('ascii', 'ignore').decode('utf-8')
     return col
 
-# === Entrada: subida o URL ===
-st.subheader("📤 Subida de archivos o carga por URL")
-modo = st.radio("¿Cómo quieres cargar los archivos?", ["Subir archivos", "Usar URLs"])
-
+# === Cargar archivos desde local o URL ===
+opcion_carga = st.radio("📤 Subida de archivos o carga por URL", ["Subir archivos", "Usar URLs"], horizontal=True)
 archivos = []
-if modo == "Subir archivos":
-    uploaded_files = st.file_uploader("Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
-    if uploaded_files and len(uploaded_files) >= 2:
+
+if opcion_carga == "Subir archivos":
+    uploaded_files = st.file_uploader("Carga tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
+    if uploaded_files:
         for file in uploaded_files:
-            if file.size > 100 * 1024 * 1024:  # Límite de 100 MB
+            if file.size > 100 * 1024 * 1024:
                 st.error(f"❌ El archivo {file.name} supera el límite de 100 MB.")
                 continue
             with st.spinner(f"⏳ Cargando {file.name}..."):
@@ -68,34 +67,30 @@ if modo == "Subir archivos":
                     st.success(f"✅ {file.name} cargado con {df.shape[0]} filas")
                 except Exception as e:
                     st.error(f"❌ Error al cargar {file.name}: {e}")
-else:
-    urls = st.text_area("🔗 Pega aquí las URLs de los archivos (una por línea)")
-    url_list = [url.strip() for url in urls.splitlines() if url.strip()]
-    if len(url_list) >= 2:
-        for i, url in enumerate(url_list):
-            with st.spinner(f"⏳ Descargando archivo {i+1} desde URL..."):
-                try:
-                    response = requests.get(url)
-                    if response.status_code == 200:
-                        ext = url.split("?")[0].split(".")[-1].lower()
-                        content = BytesIO(response.content)
-                        if ext == 'csv':
-                            df = pd.read_csv(content, sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                        elif ext in ['xlsx', 'xls']:
-                            df = pd.read_excel(content)
-                        else:
-                            st.error(f"❌ Formato no reconocido en URL: {url}")
-                            continue
-                        df.columns = [normalizar_columna(c) for c in df.columns]
-                        archivos.append(df)
-                        st.success(f"✅ Archivo {i+1} descargado con {df.shape[0]} filas")
-                    else:
-                        st.error(f"❌ Error al descargar archivo desde URL: {url}")
-                except Exception as e:
-                    st.error(f"❌ Descarga fallida desde {url}: {e}")
 
-# === Procesamiento ===
-if archivos:
+elif opcion_carga == "Usar URLs":
+    urls_input = st.text_area("Pega aquí las URLs de los archivos (una por línea)", height=100)
+    if st.button("📥 Cargar desde URLs"):
+        urls = [u.strip() for u in urls_input.split('\n') if u.strip()]
+        for url in urls:
+            try:
+                with st.spinner(f"⏳ Descargando archivo desde URL..."):
+                    response = requests.get(url)
+                    filename = url.split("/")[-1].split("?")[0]
+                    if ".csv" in filename:
+                        df = pd.read_csv(BytesIO(response.content), sep=';', encoding='utf-8', on_bad_lines='skip', low_memory=False)
+                    elif ".xlsx" in filename:
+                        df = pd.read_excel(BytesIO(response.content))
+                    else:
+                        st.warning(f"❗ Formato no reconocido en URL: {url}")
+                        continue
+                    df.columns = [normalizar_columna(c) for c in df.columns]
+                    archivos.append(df)
+                    st.success(f"✅ Archivo desde URL cargado con {df.shape[0]} filas")
+            except Exception as e:
+                st.error(f"❌ Error al descargar desde {url}: {e}")
+
+if len(archivos) >= 2:
     columnas_comunes = set(archivos[0].columns)
     for df in archivos[1:]:
         columnas_comunes &= set(df.columns)
@@ -146,7 +141,7 @@ if archivos:
     else:
         st.error("❌ No se encontraron columnas comunes entre todos los archivos.")
 else:
-    st.warning("📁 Debes subir al menos 2 archivos o indicar 2 URLs para continuar.")
+    st.info("📁 Debes cargar al menos 2 archivos para continuar.")
 
 # === Pie de página ===
 st.markdown("---")
