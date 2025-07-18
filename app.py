@@ -97,26 +97,31 @@ if modo_carga in ["Usar URLs", "Ambos"]:
 
 # === Procesamiento ===
 if len(archivos) >= 2:
-    if len(archivos) == 2:
-        df1, df2 = archivos
+    st.subheader("🔑 Selecciona las columnas clave para cruzar")
 
-        st.subheader("🔑 Selecciona las columnas clave para cruzar")
-        col_df1 = st.selectbox("Columna del primer archivo:", df1.columns.tolist(), key="col_df1")
-        col_df2 = st.selectbox("Columna del segundo archivo:", df2.columns.tolist(), key="col_df2")
+    columnas_clave = []
+    for i, df in enumerate(archivos):
+        col = st.selectbox(f"Columna clave del archivo {i+1}:", df.columns.tolist(), key=f"col_df_{i}")
+        columnas_clave.append(col)
 
-        if col_df1 and col_df2:
-            with st.spinner("🔗 Cruzando archivos..."):
-                try:
-                    resultado = pd.merge(df1, df2, left_on=col_df1, right_on=col_df2, how='inner')
-                    st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
-                except Exception as e:
-                    st.error(f"❌ Error al cruzar archivos: {e}")
-                    resultado = None
-        else:
-            st.warning("⚠️ Selecciona una columna en cada archivo para cruzar.")
-            resultado = None
+    if all(columnas_clave):
+        with st.spinner("🔗 Cruzando archivos..."):
+            try:
+                resultado = archivos[0]
+                for i in range(1, len(archivos)):
+                    resultado = pd.merge(
+                        resultado,
+                        archivos[i],
+                        left_on=columnas_clave[0],
+                        right_on=columnas_clave[i],
+                        how='inner'
+                    )
+                st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
+            except Exception as e:
+                st.error(f"❌ Error al cruzar archivos: {e}")
+                resultado = None
     else:
-        st.error("❌ Esta versión solo admite el cruce entre **2 archivos** cuando las columnas clave tienen nombres diferentes.")
+        st.warning("⚠️ Selecciona una columna en cada archivo para cruzar.")
         resultado = None
 
     if resultado is not None:
