@@ -136,7 +136,7 @@ if len(archivos) >= 2:
         st.warning("⚠️ Selecciona una columna en cada archivo para cruzar.")
         resultado = None
 
-    if resultado is not None:
+if resultado is not None:
     st.subheader("✏️ Renombra las columnas (opcional)")
     nombres_actuales = resultado.columns.tolist()
     nuevos_nombres = []
