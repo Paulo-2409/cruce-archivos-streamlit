@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit_sortables as sortables
 import base64
 import pandas as pd
 import unicodedata
@@ -157,41 +158,34 @@ if len(archivos) >= 2:
 
         st.subheader("✂️ Selecciona y ordena columnas a exportar")
 
-        # Paso 1: selección de columnas
-        columnas_default = resultado.columns.tolist()
+# Paso 1: selección de columnas
         columnas_seleccionadas = st.multiselect(
             "Selecciona columnas para incluir:",
-            columnas_default,
-            default=columnas_default
+            resultado.columns.tolist(),
+            default=resultado.columns.tolist()
         )
 
-        # Paso 2: orden personalizado
-        orden_columnas = []
-        st.markdown("🔃 Ordena las columnas seleccionadas:")
-        for i in range(len(columnas_seleccionadas)):
-            col = st.selectbox(
-                f"Columna en posición {i+1}:",
-                [c for c in columnas_seleccionadas if c not in orden_columnas],
-                key=f"orden_{i}"
-            )
-            orden_columnas.append(col)
+# Paso 2: ordenar con drag-and-drop
+        st.markdown("🔃 Ordena las columnas con drag-and-drop:")
+        orden_columnas = sortables.sort_items(columnas_seleccionadas)
 
+# Aplicar el nuevo orden
         resultado = resultado[orden_columnas]
 
-        nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-        buffer = BytesIO()
-        with st.spinner("📦 Generando archivo para descarga..."):
-            resultado.to_excel(buffer, index=False, engine='openpyxl')
-            buffer.seek(0)
-        st.download_button(
-            label="📥 Descargar archivo Excel",
-            data=buffer,
-            file_name=f"{nombre_salida.strip()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
+buffer = BytesIO()
+with st.spinner("📦 Generando archivo para descarga..."):
+    resultado.to_excel(buffer, index=False, engine='openpyxl')
+    buffer.seek(0)
+st.download_button(
+    label="📥 Descargar archivo Excel",
+    data=buffer,
+    file_name=f"{nombre_salida.strip()}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
-        st.subheader("👀 Vista previa")
-        st.dataframe(resultado.head())
+st.subheader("👀 Vista previa")
+st.dataframe(resultado.head())
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
     
