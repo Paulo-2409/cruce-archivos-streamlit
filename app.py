@@ -116,7 +116,7 @@ if len(archivos) >= 2:
 
     tipo_cruce = st.selectbox("Tipo de cruce:", ["inner", "left", "right", "outer"], index=0, help="Selecciona cómo combinar los archivos")
 
-    if all(columnas_clave):
+if all(columnas_clave):
     with st.spinner("🔗 Cruzando archivos..."):
         try:
             resultado = archivos[0]
