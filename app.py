@@ -47,11 +47,12 @@ def normalizar_columna(col):
     col = unicodedata.normalize('NFKD', col)
     return col.encode('ascii', 'ignore').decode('utf-8')
 
-def cargar_archivo(filepath):
-    if filepath.endswith(".csv"):
-        return pd.read_csv(filepath, sep=";", encoding="utf-8", on_bad_lines="skip", low_memory=False)
+def cargar_archivo(file):
+    filename = file.name
+    if filename.endswith(".csv"):
+        return pd.read_csv(file, sep=";", encoding="utf-8", on_bad_lines="skip", low_memory=False)
     else:
-        return pd.read_excel(filepath, engine='openpyxl')
+        return pd.read_excel(file, engine='openpyxl')
 
 def guardar_configuracion(config):
     with open(CONFIG_FILE, 'w') as f:
