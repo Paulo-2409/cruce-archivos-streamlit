@@ -183,8 +183,8 @@ st.download_button(
 st.subheader("👀 Vista previa")
 st.dataframe(resultado.head())
 
-else:
-    st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
+    else:
+        st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
     
 # === Pie ===
 st.markdown("---")
