@@ -158,16 +158,12 @@ if len(archivos) >= 2:
 
         st.subheader("✂️ Selecciona y ordena columnas a exportar")
 
-        # Paso 1: selección de columnas
-        columnas_seleccionadas = st.multiselect(
-            "Selecciona columnas para incluir:",
+        # Selección y orden en un solo paso
+        orden_columnas = sortables.sort_items(
             resultado.columns.tolist(),
-            default=resultado.columns.tolist()
+            direction="horizontal",
+            label="🔃 Arrastra para seleccionar y ordenar columnas a exportar"
         )
-
-        # Paso 2: ordenar con drag-and-drop
-        st.markdown("🔃 Ordena las columnas con drag-and-drop:")
-        orden_columnas = sortables.sort_items(columnas_seleccionadas)
 
         # Aplicar el nuevo orden
         resultado = resultado[orden_columnas]
