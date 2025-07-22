@@ -158,15 +158,14 @@ if len(archivos) >= 2:
 
         st.subheader("✂️ Selecciona y ordena columnas a exportar")
 
-        # Selección y orden en un solo paso
-        orden_columnas = sortables.sort_items(
-            resultado.columns.tolist(),
-            direction="horizontal",
-            label="🔃 Arrastra para seleccionar y ordenar columnas a exportar"
-        )
+# Texto explicativo (el label que no acepta la función, lo ponemos aquí)
+st.markdown("🔃 Arrastra para seleccionar y ordenar columnas a exportar:")
 
-        # Aplicar el nuevo orden
-        resultado = resultado[orden_columnas]
+# Solo pasar la lista, sin argumentos extra
+orden_columnas = sortables.sort_items(resultado.columns.tolist())
+
+# Aplicar el nuevo orden
+resultado = resultado[orden_columnas]
 
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
         buffer = BytesIO()
