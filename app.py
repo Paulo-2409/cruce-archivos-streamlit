@@ -167,20 +167,21 @@ orden_columnas = sortables.sort_items(resultado.columns.tolist())
 # Aplicar el nuevo orden
 resultado = resultado[orden_columnas]
 
-        nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-        buffer = BytesIO()
-        with st.spinner("📦 Generando archivo para descarga..."):
-            resultado.to_excel(buffer, index=False, engine='openpyxl')
-            buffer.seek(0)
-        st.download_button(
-            label="📥 Descargar archivo Excel",
-            data=buffer,
-            file_name=f"{nombre_salida.strip()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
+buffer = BytesIO()
+with st.spinner("📦 Generando archivo para descarga..."):
+    resultado.to_excel(buffer, index=False, engine='openpyxl')
+    buffer.seek(0)
 
-        st.subheader("👀 Vista previa")
-        st.dataframe(resultado.head())
+st.download_button(
+    label="📥 Descargar archivo Excel",
+    data=buffer,
+    file_name=f"{nombre_salida.strip()}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+st.subheader("👀 Vista previa")
+st.dataframe(resultado.head())
 
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
