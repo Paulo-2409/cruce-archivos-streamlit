@@ -6,10 +6,12 @@ import unicodedata
 from io import BytesIO
 import os
 import gdown
+import json
 
 # Configurar carpeta temporal en Streamlit Cloud
 TEMP_DIR = "/tmp"
 os.makedirs(TEMP_DIR, exist_ok=True)
+CONFIG_FILE = os.path.join(TEMP_DIR, "config_cruce.json")
 
 # === Logo ===
 def mostrar_logo():
@@ -33,7 +35,7 @@ Esta herramienta permite cruzar archivos por una columna común, aplicar filtros
 
 ### 🧭 Pasos para usar la app:
 1. **Carga archivos .csv o .xlsx o introduce URLs públicas de Google Drive**
-2. Selecciona la **columna clave** para cruzar
+2. Selecciona la **columna clave** para cruzar y el tipo de cruce
 3. (Opcional) Aplica filtros por columna
 4. (Opcional) Elige qué columnas exportar
 5. Escribe el nombre del archivo de salida y **descárgalo**
@@ -51,6 +53,16 @@ def cargar_archivo(filepath):
     else:
         return pd.read_excel(filepath, engine='openpyxl')
 
+def guardar_configuracion(config):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f)
+
+def cargar_configuracion():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
 # === Carga combinada ===
 st.subheader("📥 Subida de archivos o carga por URL")
 modo_carga = st.radio("¿Cómo quieres cargar los archivos?", ["Subir archivos", "Usar URLs", "Ambos"], horizontal=True)
@@ -60,11 +72,8 @@ archivos = []
 if modo_carga in ["Subir archivos", "Ambos"]:
     uploaded_files = st.file_uploader("📤 Sube tus archivos (.csv o .xlsx)", type=['csv', 'xlsx'], accept_multiple_files=True)
     for file in uploaded_files:
-        if file.size > 100 * 1024 * 1024:
-            st.warning(f"⚠️ El archivo {file.name} supera los 100MB y no se puede cargar directamente.")
-            continue
         try:
-            df = pd.read_csv(file, sep=";", encoding="utf-8", on_bad_lines="skip", low_memory=False) if file.name.endswith('.csv') else pd.read_excel(file, engine='openpyxl')
+            df = cargar_archivo(file)
             df.columns = [normalizar_columna(c) for c in df.columns]
             archivos.append(df)
             st.success(f"✅ {file.name} cargado con {df.shape[0]} filas")
@@ -72,8 +81,7 @@ if modo_carga in ["Subir archivos", "Ambos"]:
             st.error(f"❌ Error al cargar {file.name}: {e}")
 
 if modo_carga in ["Usar URLs", "Ambos"]:
-    st.text("🔗 Pega una o más URLs de Google Drive (una por línea):")
-    input_urls = st.text_area("📎 URLs de archivos compartidos", height=100)
+    input_urls = st.text_area("📎 URLs de archivos compartidos (una por línea):", height=100)
     if st.button("🌐 Cargar desde URLs"):
         urls = [u.strip() for u in input_urls.split("\n") if u.strip()]
         for url in urls:
@@ -96,21 +104,22 @@ if modo_carga in ["Usar URLs", "Ambos"]:
             except Exception as e:
                 st.error(f"❌ No se pudo cargar: {url}\n{e}")
 
-# === Procesamiento ===
+# === Cruce de archivos ===
 if len(archivos) >= 2:
-    st.subheader("🔑 Selecciona las columnas clave para cruzar")
+    st.subheader("🔑 Selecciona las columnas clave y tipo de cruce")
 
     columnas_clave = []
     for i, df in enumerate(archivos):
         col = st.selectbox(f"Columna clave del archivo {i+1}:", df.columns.tolist(), key=f"col_df_{i}")
         columnas_clave.append(col)
 
+    tipo_cruce = st.selectbox("Tipo de cruce:", ["inner", "left", "right", "outer"], index=0, help="Selecciona cómo combinar los archivos")
+
     if all(columnas_clave):
         with st.spinner("🔗 Cruzando archivos..."):
             try:
                 resultado = archivos[0]
                 col_izq = columnas_clave[0]
-
                 for i in range(1, len(archivos)):
                     col_der = columnas_clave[i]
                     resultado = pd.merge(
@@ -118,16 +127,9 @@ if len(archivos) >= 2:
                         archivos[i],
                         left_on=col_izq,
                         right_on=col_der,
-                        how='inner',
+                        how=tipo_cruce,
                         suffixes=('', f'_dup{i}')
                     )
-
-                # Renombrar la columna clave final como "columna_clave" y eliminar duplicados
-                resultado.rename(columns={col_izq: "columna_clave"}, inplace=True)
-                for col in columnas_clave[1:]:
-                    if col in resultado.columns:
-                        resultado.drop(columns=col, inplace=True)
-
                 st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
             except Exception as e:
                 st.error(f"❌ Error al cruzar archivos: {e}")
@@ -138,58 +140,45 @@ if len(archivos) >= 2:
 
     if resultado is not None:
         st.subheader("✏️ Renombra las columnas (opcional)")
-        nombres_actuales = resultado.columns.tolist()
-        nuevos_nombres = []
-
-        for nombre in nombres_actuales:
-            nuevo = st.text_input(f"Renombrar '{nombre}' a:", value=nombre, key=f"rename_{nombre}")
-            nuevos_nombres.append(nuevo)
-
+        nuevos_nombres = [st.text_input(f"Renombrar '{c}' a:", value=c) for c in resultado.columns]
         resultado.columns = nuevos_nombres
 
         st.subheader("🎯 Filtros opcionales")
         columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
+        filtros_aplicados = {}
         for col in columnas_filtro:
             opciones = resultado[col].dropna().unique().tolist()
-            seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones, key=f"filtro_{col}")
+            seleccion = st.multiselect(f"Valores para '{col}':", opciones)
             if seleccion:
                 resultado = resultado[resultado[col].isin(seleccion)]
-                st.success(f"✅ Filtro aplicado. Filas restantes: {resultado.shape[0]}")
+                filtros_aplicados[col] = seleccion
 
         st.subheader("✂️ Selecciona y ordena columnas a exportar")
-
-        # Paso 1: selección de columnas
-        columnas_seleccionadas = st.multiselect(
-            "Selecciona columnas para incluir:",
-            resultado.columns.tolist(),
-            default=resultado.columns.tolist()
-        )
-
-        # Paso 2: ordenar con drag-and-drop
-        st.markdown("🔃 Ordena las columnas con drag-and-drop:")
+        columnas_seleccionadas = st.multiselect("Selecciona columnas para incluir:", resultado.columns.tolist(), default=resultado.columns.tolist())
         orden_columnas = sortables.sort_items(columnas_seleccionadas)
-
-        # Aplicar el nuevo orden
         resultado = resultado[orden_columnas]
+
+        st.subheader("⚙️ Guardar configuración")
+        if st.button("💾 Guardar configuración actual"):
+            guardar_configuracion({
+                "columnas_clave": columnas_clave,
+                "tipo_cruce": tipo_cruce,
+                "filtros": filtros_aplicados,
+                "columnas": orden_columnas
+            })
+            st.success("✅ Configuración guardada.")
+
+        st.subheader("👀 Vista previa del resultado")
+        st.dataframe(resultado.head())
 
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
         buffer = BytesIO()
-        with st.spinner("📦 Generando archivo para descarga..."):
-            resultado.to_excel(buffer, index=False, engine='openpyxl')
-            buffer.seek(0)
-        st.download_button(
-            label="📥 Descargar archivo Excel",
-            data=buffer,
-            file_name=f"{nombre_salida.strip()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        st.subheader("👀 Vista previa")
-        st.dataframe(resultado.head())
-
+        resultado.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)
+        st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
-    
+
 # === Pie ===
 st.markdown("---")
 st.caption("🔧 Desarrollado por Paulo Munive • App con Streamlit • © 2025")
