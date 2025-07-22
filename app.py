@@ -177,6 +177,22 @@ if len(archivos) >= 2:
             })
             st.success("✅ Configuración guardada.")
 
+        # Botón para reiniciar
+        if st.button("🔄 Reiniciar aplicación"):
+            st.session_state.clear()
+            st.experimental_rerun()
+
+        # Opción para cargar configuración guardada
+        st.subheader("📂 Cargar configuración guardada")
+        if os.path.exists(CONFIG_FILE):
+            if st.button("📥 Aplicar configuración previa"):
+                config_prev = cargar_configuracion()
+                st.session_state["columnas_clave"] = config_prev.get("columnas_clave", [])
+                st.session_state["tipo_cruce"] = config_prev.get("tipo_cruce", "inner")
+                st.session_state["filtros"] = config_prev.get("filtros", {})
+                st.session_state["columnas"] = config_prev.get("columnas", [])
+                st.success("✅ Configuración previa cargada. Sube archivos nuevos para usarla.")
+
         st.subheader("👀 Vista previa del resultado")
         st.dataframe(resultado.head())
 
@@ -187,7 +203,7 @@ if len(archivos) >= 2:
         st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
-
+    
 # === Pie ===
 st.markdown("---")
 st.caption("🔧 Desarrollado por Paulo Munive • App con Streamlit • © 2025")
