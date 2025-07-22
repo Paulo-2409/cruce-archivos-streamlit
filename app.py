@@ -116,36 +116,36 @@ if len(archivos) >= 2:
 
     tipo_cruce = st.selectbox("Tipo de cruce:", ["inner", "left", "right", "outer"], index=0, help="Selecciona cómo combinar los archivos")
 
-if all(columnas_clave):
-    with st.spinner("🔗 Cruzando archivos..."):
-        try:
-            resultado = archivos[0]
-            col_izq = columnas_clave[0]
+    if all(columnas_clave):
+        with st.spinner("🔗 Cruzando archivos..."):
+            try:
+                resultado = archivos[0]
+                col_izq = columnas_clave[0]
 
-            for i in range(1, len(archivos)):
-                col_der = columnas_clave[i]
-                resultado = pd.merge(
-                    resultado,
-                    archivos[i],
-                    left_on=col_izq,
-                    right_on=col_der,
-                    how=tipo_cruce,
-                    suffixes=('', f'_dup{i}')
-                )
+                for i in range(1, len(archivos)):
+                    col_der = columnas_clave[i]
+                    resultado = pd.merge(
+                        resultado,
+                        archivos[i],
+                        left_on=col_izq,
+                        right_on=col_der,
+                        how=tipo_cruce,
+                        suffixes=('', f'_dup{i}')
+                    )
 
-            # ✅ Unificar la columna clave y limpiar duplicados
-            resultado.rename(columns={col_izq: "columna_clave"}, inplace=True)
-            for col in columnas_clave[1:]:
-                if col in resultado.columns:
-                    resultado.drop(columns=col, inplace=True)
+                # ✅ Unificar la columna clave y limpiar duplicados
+                resultado.rename(columns={col_izq: "columna_clave"}, inplace=True)
+                for col in columnas_clave[1:]:
+                    if col in resultado.columns:
+                        resultado.drop(columns=col, inplace=True)
 
-            st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
-        except Exception as e:
-            st.error(f"❌ Error al cruzar archivos: {e}")
-            resultado = None
-else:
-    st.warning("⚠️ Selecciona una columna en cada archivo para cruzar.")
-    resultado = None
+                st.success(f"✅ Cruce completado con {resultado.shape[0]} filas.")
+            except Exception as e:
+                st.error(f"❌ Error al cruzar archivos: {e}")
+                resultado = None
+    else:
+        st.warning("⚠️ Selecciona una columna en cada archivo para cruzar.")
+        resultado = None
 
     if resultado is not None:
         st.subheader("✏️ Renombra las columnas (opcional)")
