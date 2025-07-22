@@ -137,54 +137,54 @@ if len(archivos) >= 2:
         resultado = None
 
     if resultado is not None:
-        st.subheader("✏️ Renombra las columnas (opcional)")
-        nombres_actuales = resultado.columns.tolist()
-        nuevos_nombres = []
+    st.subheader("✏️ Renombra las columnas (opcional)")
+    nombres_actuales = resultado.columns.tolist()
+    nuevos_nombres = []
 
-        for nombre in nombres_actuales:
-            nuevo = st.text_input(f"Renombrar '{nombre}' a:", value=nombre, key=f"rename_{nombre}")
-            nuevos_nombres.append(nuevo)
+    for nombre in nombres_actuales:
+        nuevo = st.text_input(f"Renombrar '{nombre}' a:", value=nombre, key=f"rename_{nombre}")
+        nuevos_nombres.append(nuevo)
 
-        resultado.columns = nuevos_nombres
+    resultado.columns = nuevos_nombres
 
-        st.subheader("🎯 Filtros opcionales")
-        columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
-        for col in columnas_filtro:
-            opciones = resultado[col].dropna().unique().tolist()
-            seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones, key=f"filtro_{col}")
-            if seleccion:
-                resultado = resultado[resultado[col].isin(seleccion)]
-                st.success(f"✅ Filtro aplicado. Filas restantes: {resultado.shape[0]}")
+    st.subheader("🎯 Filtros opcionales")
+    columnas_filtro = st.multiselect("Selecciona columnas para filtrar:", resultado.columns.tolist())
+    for col in columnas_filtro:
+        opciones = resultado[col].dropna().unique().tolist()
+        seleccion = st.multiselect(f"Selecciona valores para '{col}':", opciones, key=f"filtro_{col}")
+        if seleccion:
+            resultado = resultado[resultado[col].isin(seleccion)]
+            st.success(f"✅ Filtro aplicado. Filas restantes: {resultado.shape[0]}")
 
-        st.subheader("✂️ Selecciona y ordena columnas a exportar")
+    st.subheader("✂️ Selecciona y ordena columnas a exportar")
 
-# Texto explicativo (el label que no acepta la función, lo ponemos aquí)
-st.markdown("🔃 Arrastra para seleccionar y ordenar columnas a exportar:")
+    # Texto explicativo (el label que no acepta la función, lo ponemos aquí)
+    st.markdown("🔃 Arrastra para seleccionar y ordenar columnas a exportar:")
 
-# Solo pasar la lista, sin argumentos extra
-orden_columnas = sortables.sort_items(resultado.columns.tolist())
+    # Solo pasar la lista, sin argumentos extra
+    orden_columnas = sortables.sort_items(resultado.columns.tolist())
 
-# Aplicar el nuevo orden
-resultado = resultado[orden_columnas]
+    # Aplicar el nuevo orden
+    resultado = resultado[orden_columnas]
 
-nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-buffer = BytesIO()
-with st.spinner("📦 Generando archivo para descarga..."):
-    resultado.to_excel(buffer, index=False, engine='openpyxl')
-    buffer.seek(0)
+    nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
+    buffer = BytesIO()
+    with st.spinner("📦 Generando archivo para descarga..."):
+        resultado.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)
 
-st.download_button(
-    label="📥 Descargar archivo Excel",
-    data=buffer,
-    file_name=f"{nombre_salida.strip()}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    st.download_button(
+        label="📥 Descargar archivo Excel",
+        data=buffer,
+        file_name=f"{nombre_salida.strip()}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-st.subheader("👀 Vista previa")
-st.dataframe(resultado.head())
+    st.subheader("👀 Vista previa")
+    st.dataframe(resultado.head())
 
-    else:
-        st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
+else:
+    st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
     
 # === Pie ===
 st.markdown("---")
