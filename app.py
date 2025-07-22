@@ -179,7 +179,9 @@ if len(archivos) >= 2:
 
         # Botón para reiniciar
         if st.button("🔄 Reiniciar aplicación"):
+            config = cargar_configuracion() if os.path.exists(CONFIG_FILE) else {}
             st.session_state.clear()
+            st.session_state["config_prev"] = config
             st.rerun()
 
         # Opción para cargar configuración guardada
@@ -197,6 +199,12 @@ if len(archivos) >= 2:
         st.dataframe(resultado.head())
 
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
+        buffer = BytesIO()
+        resultado.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)
+        st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+else:
+    st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
         buffer = BytesIO()
         resultado.to_excel(buffer, index=False, engine='openpyxl')
         buffer.seek(0)
