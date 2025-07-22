@@ -180,7 +180,7 @@ if len(archivos) >= 2:
         # Botón para reiniciar
         if st.button("🔄 Reiniciar aplicación"):
             st.session_state.clear()
-            st.experimental_rerun()
+            st.rerun()
 
         # Opción para cargar configuración guardada
         st.subheader("📂 Cargar configuración guardada")
