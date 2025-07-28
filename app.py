@@ -17,10 +17,11 @@ CONFIG_FILE = os.path.join(TEMP_DIR, "config_cruce.json")
 def mostrar_logo():
     with open("Logo_pmunive.png", "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
-        st.markdown(f"""
+        st.markdown("""
             <div style='display: flex; justify-content: center; margin-top: 5px; margin-bottom: -30px;'>
-                <img src='data:image/png;base64,{encoded}' alt='PMUNIVE Logo' style='width: 180px;'>
-            </div>""", unsafe_allow_html=True)
+                <img src='data:image/png;base64,""" + encoded + """' alt='PMUNIVE Logo' style='width: 180px;'>
+            </div>
+        """, unsafe_allow_html=True)
 
 mostrar_logo()
 
@@ -48,7 +49,7 @@ def normalizar_columna(col):
     return col.encode('ascii', 'ignore').decode('utf-8')
 
 def cargar_archivo(file):
-    filename = file.name
+    filename = file.name if hasattr(file, 'name') else file
     if filename.endswith(".csv"):
         return pd.read_csv(file, sep=";", encoding="utf-8", on_bad_lines="skip", low_memory=False)
     else:
@@ -63,6 +64,12 @@ def cargar_configuracion():
         with open(CONFIG_FILE, 'r') as f:
             return json.load(f)
     return {}
+
+def generar_descarga(resultado, nombre_archivo):
+    buffer = BytesIO()
+    resultado.to_excel(buffer, index=False, engine='openpyxl')
+    buffer.seek(0)
+    st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_archivo}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # === Carga combinada ===
 st.subheader("📥 Subida de archivos o carga por URL")
@@ -114,7 +121,7 @@ if len(archivos) >= 2:
         col = st.selectbox(f"Columna clave del archivo {i+1}:", df.columns.tolist(), key=f"col_df_{i}")
         columnas_clave.append(col)
 
-    tipo_cruce = st.selectbox("Tipo de cruce:", ["inner", "left", "right", "outer"], index=0, help="Selecciona cómo combinar los archivos")
+    tipo_cruce = st.selectbox("Tipo de cruce:", ["inner", "left", "right", "outer"], index=0)
 
     if all(columnas_clave):
         with st.spinner("🔗 Cruzando archivos..."):
@@ -133,7 +140,6 @@ if len(archivos) >= 2:
                         suffixes=('', f'_dup{i}')
                     )
 
-                # ✅ Unificar la columna clave y limpiar duplicados
                 resultado.rename(columns={col_izq: "columna_clave"}, inplace=True)
                 for col in columnas_clave[1:]:
                     if col in resultado.columns:
@@ -177,14 +183,12 @@ if len(archivos) >= 2:
             })
             st.success("✅ Configuración guardada.")
 
-        # Botón para reiniciar
         if st.button("🔄 Reiniciar aplicación"):
             config = cargar_configuracion() if os.path.exists(CONFIG_FILE) else {}
             st.session_state.clear()
             st.session_state["config_prev"] = config
             st.rerun()
 
-        # Opción para cargar configuración guardada
         st.subheader("📂 Cargar configuración guardada")
         if os.path.exists(CONFIG_FILE):
             if st.button("📥 Aplicar configuración previa"):
@@ -199,16 +203,9 @@ if len(archivos) >= 2:
         st.dataframe(resultado.head())
 
         nombre_salida = st.text_input("📄 Nombre del archivo de salida:", "resultado_cruce")
-        buffer = BytesIO()
-        resultado.to_excel(buffer, index=False, engine='openpyxl')
-        buffer.seek(0)
-        st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        generar_descarga(resultado, nombre_salida)
 else:
     st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
-        buffer = BytesIO()
-        resultado.to_excel(buffer, index=False, engine='openpyxl')
-        buffer.seek(0)
-        st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # === Pie ===
 st.markdown("---")
