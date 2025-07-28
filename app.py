@@ -209,9 +209,7 @@ else:
         resultado.to_excel(buffer, index=False, engine='openpyxl')
         buffer.seek(0)
         st.download_button("📥 Descargar archivo Excel", buffer, file_name=f"{nombre_salida}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-else:
-    st.warning("📁 Debes subir al menos 2 archivos para cruzarlos.")
-    
+
 # === Pie ===
 st.markdown("---")
 st.caption("🔧 Desarrollado por Paulo Munive • App con Streamlit • © 2025")
